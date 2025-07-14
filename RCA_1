@@ -1,0 +1,406 @@
+{
+  "name": "RCA_1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f4b5a46b-da74-4baf-b513-a583dba8ec8b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        0
+      ],
+      "id": "92bb1d7a-eb65-48cb-8404-1a3ee43bd99c",
+      "name": "Webhook",
+      "webhookId": "f4b5a46b-da74-4baf-b513-a583dba8ec8b"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "01197391-acb7-4860-a79d-ea8425b5ee6b",
+              "name": "body.instance_id",
+              "value": "={{ $json.body.instance_id }}",
+              "type": "string"
+            },
+            {
+              "id": "07e24e69-1e95-45fe-aed3-0f3beeb43eba",
+              "name": "body.region",
+              "value": "={{ $json.body.region }}",
+              "type": "string"
+            },
+            {
+              "id": "c318e7db-5746-4272-954b-2d7129fe6896",
+              "name": "body.status",
+              "value": "down",
+              "type": "string"
+            },
+            {
+              "id": "77da931c-59f6-4572-89cb-af501fb6e730",
+              "name": "body.timestamp",
+              "value": "={{ $json.body.timestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        0
+      ],
+      "id": "4b82564d-3df8-4556-a92f-72a5380389f8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        260
+      ],
+      "id": "3be677b4-b76d-4eb9-b69a-95b0179effd7",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0ZfB6PCf224WRqUY",
+          "name": "OpenAi account 10"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        420,
+        260
+      ],
+      "id": "3355a094-1f51-42bc-8ebc-a6afdd502f8c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ekMTccC7gOwUCYGV",
+          "name": "Google Gemini(PaLM) Api account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://<MCP-SERVER>/sse"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        620,
+        280
+      ],
+      "id": "001347af-a72d-4354-b1d5-0b6cb642b33e",
+      "name": "MCP server-aws"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://<MCP-SERVER>/sse"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        780,
+        280
+      ],
+      "id": "47dc1c1f-3f85-4cd1-9434-a40d6b989a3f",
+      "name": "MCP server-doc"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Use the mcp client tool to get CloudWatch metrics for instance {{ $json.body.instance_id }} in region {{ $json.body.region }}.\n\n  Calculate 15 minutes before {{ $json.body.timestamp }} as start time and use {{ $json.body.timestamp }} as end time.\n\n  Call get_cloudwatch_metrics with:\n  - resource_id: {{ $json.body.instance_id }}\n  - region: {{ $json.body.region }}\n  - start_time: ({{ $json.body.timestamp }} minus 15 minutes)\n  - end_time: {{ $json.body.timestamp }}\n  - period: 300\n\n  Show:\n  1. CPUUtilization with average, max, min and recent values\n  2. NetworkIn/NetworkOut activity with data points\n  3. DiskReadOps/DiskWriteOps\n  4. Health insights based on the metrics\n\n  Use a 15-minute window to ensure sufficient data points for analysis.\n\nAfter getting the cloudwatch metrics call ec2 list tool to get IP-address of this instance,\n\n\n  1. Use mcp__doct__ssh_execute_commands tool with config_file=\"/app/config/myserver.yaml\" to execute the commands via SSH\n  2. Use mcp__doct__notify_teams tool to send the command results to Teams channel\n\n  Do NOT create a new config file - use the existing myserver.yaml file.\n\n\nAfter all the finding prepare a detailed report explaing what has been done and send it teams using notify_teams tool.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        420,
+        0
+      ],
+      "id": "9678b6b0-658f-4468-923a-4318028d6f8b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "content": "## Get's DATA\n**Receives** request from Monitor app.",
+        "height": 220,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        -80
+      ],
+      "id": "81f2fb40-b561-4a83-87d2-092b0dde9ede",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Scrapes the data  \n",
+        "height": 220,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -80
+      ],
+      "id": "849a2698-d81c-48db-95f4-964f5a6cf4f6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Prompt here to specify the task \n",
+        "height": 220,
+        "width": 320,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        -80
+      ],
+      "id": "f5c75445-9e9b-4b40-8ecc-01c2f6d7a87b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## MCP server's\n",
+        "height": 200,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        580,
+        200
+      ],
+      "id": "2520bb58-8e21-41c1-8922-035ffaf0f9a2",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Update the sheet's \n",
+        "height": 220,
+        "width": 320,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -80
+      ],
+      "id": "fcf0e96b-0b00-445f-a6f8-8b95bca11667",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1wgWTFhIXkSPF_RYledxc8t7Ky7FtSJzYTxDg9tBzd8E",
+          "mode": "list",
+          "cachedResultName": "Server-report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wgWTFhIXkSPF_RYledxc8t7Ky7FtSJzYTxDg9tBzd8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wgWTFhIXkSPF_RYledxc8t7Ky7FtSJzYTxDg9tBzd8E/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Edit Fields').item.json.body.instance_id }}",
+            "STATUS": "={{ $('Webhook').item.json.body.status }}",
+            "DATE": "={{ $('Webhook').item.json.body.timestamp }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATE",
+              "displayName": "DATE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        800,
+        0
+      ],
+      "id": "47038aff-e0d1-4ab7-92c3-f759ae1dbe28",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kiMwy1rf52Sp6xec",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## AI Chat model\n",
+        "height": 200,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        200
+      ],
+      "id": "b05d4e72-6aed-478b-82a4-b056859a04e8",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP server-aws": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP server-doc": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "12afd016-c9b4-4473-9296-7b7eabac2272",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7f0a0c7b6eefab4e332baf804597e446ba28c4a23f25dcda47eb1bd1a8529b5c"
+  },
+  "id": "CVx1h26K3CD64iLJ",
+  "tags": []
+}
